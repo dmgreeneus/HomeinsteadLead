@@ -26,39 +26,73 @@ namespace HomeinsteadLead
                 String statevalue = null;
                 try
                 {
-                    if (lead.Attributes.Contains("hisc_state"))                   {
-                        statevalue = lead.GetAttributeValue<String>("hisc_state");
-
-                        Entity state = new Entity();
-                        state.LogicalName = "hisc_state";
-                        QueryExpression query = new QueryExpression
+                    if (lead.Attributes.Contains("hisc_state"))
+                    {
+                        if (lead.GetAttributeValue<String>("hisc_state") != null)
                         {
-                            EntityName = state.LogicalName,
-                            ColumnSet = new ColumnSet("hisc_stateid"),
-                            Criteria = new FilterExpression
+                            statevalue = lead.GetAttributeValue<String>("hisc_state");
+                            Entity state = new Entity();
+                            state.LogicalName = "hisc_state";
+                            QueryExpression query = new QueryExpression();
+                            if (statevalue.Length > 2)
                             {
-                                FilterOperator = LogicalOperator.And,
-                                Conditions =
-                            {
-                                new ConditionExpression
+
+                                query = new QueryExpression
                                 {
-                                   AttributeName = "hisc_name",
-                                   Operator = ConditionOperator.Equal,
-                                   Values = { statevalue }
+                                    EntityName = state.LogicalName,
+                                    ColumnSet = new ColumnSet("hisc_stateid"),
+                                    Criteria = new FilterExpression
+                                    {
+                                        FilterOperator = LogicalOperator.And,
+                                        Conditions =
+                                    {
+                                        new ConditionExpression
+                                        {
+                                            AttributeName = "hisc_name",
+                                            Operator = ConditionOperator.Equal,
+                                            Values = { statevalue }
+                                        }
+                                   }
+                                    }
+                                };
+
+                            }
+
+                            else if (statevalue.Length == 2)
+                            {
+                                query = new QueryExpression
+                                {
+                                    EntityName = state.LogicalName,
+                                    ColumnSet = new ColumnSet("hisc_stateid"),
+                                    Criteria = new FilterExpression
+                                    {
+                                        FilterOperator = LogicalOperator.And,
+                                        Conditions =
+                                    {
+                                            new ConditionExpression
+                                            {
+                                                AttributeName = "hisc_abbreviation",
+                                                Operator = ConditionOperator.Equal,
+                                                Values = { statevalue }
+                                            }
+                                    }
+                                    }
+                                };
+
+                            }
+
+                            if (query != null)
+                            {
+                                EntityCollection results = service.RetrieveMultiple(query);
+                                foreach (var result in results.Entities)
+                                {
+                                    Guid stateid = result.GetAttributeValue<Guid>("hisc_stateid");
+                                    lead.Attributes["hisc_stateprovinceid"] = new EntityReference(state.LogicalName, stateid);
+
                                 }
                             }
-                            }
-                        };
-                        EntityCollection results = service.RetrieveMultiple(query);
-                       
 
-                        foreach (var result in results.Entities)
-                        {
-                            Guid stateid = result.GetAttributeValue<Guid>("hisc_stateid");
-                            lead.Attributes["hisc_stateprovinceid"] = new EntityReference(state.LogicalName,stateid);
-                            
                         }
-                        
                     }
                 }
                 catch (FaultException<OrganizationServiceFault> ex)
